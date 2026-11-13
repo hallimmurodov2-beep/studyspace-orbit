@@ -5,7 +5,7 @@
 const SANDBOX = /[?&]sandbox\b/.test(location.search);
 const STORE_KEY = SANDBOX ? 'studyspace.orbit.sandbox' : 'studyspace.orbit.v1';
 const BACKUP_KEY = SANDBOX ? 'studyspace.orbit.sandbox.backups' : 'studyspace.orbit.backups';
-const APP_VERSION = '2.0';
+const APP_VERSION = '2.1';
 
 const PALETTE = ['#7b6cff', '#3d8bff', '#16b8c9', '#2fbf71', '#9ccc3c', '#f2b92f', '#ff8a3d', '#ff5d5d', '#ff5c9a', '#c264ff', '#8a94ab', '#b08968'];
 const ACCENTS = { violet: '#7b6cff', blue: '#3d8bff', teal: '#14b8a6', green: '#2fbf71', orange: '#ff8a3d', pink: '#ff5c9a' };
@@ -77,6 +77,7 @@ function saveNow() {
     storageOK = true;
     dailyBackup();
     if (typeof FileBackup !== 'undefined') FileBackup.schedule();          // the linked backup file follows a moment later
+    if (typeof Sync !== 'undefined') Sync.schedule();                      // and so do the other devices, when sync is on
   } catch (e) {
     if (storageOK) { storageOK = false; if (typeof toast === 'function') toast(t('Could not save — browser storage is full or blocked. Export a backup now.'), { kind: 'danger' }); }
   }
@@ -406,6 +407,7 @@ function backupDue(now = Date.now()) {
   const m = state.meta, amount = state.tasks.length + state.grades.length + state.notes.length + state.cards.length + Object.keys(state.termMarks).length * 3;
   if (amount < 15 || now - (state.createdAt || now) < 3 * DAY || now < (m.backupSnooze || 0)) return false;
   if (typeof FileBackup !== 'undefined' && FileBackup.covers(now)) return false;      // a linked file is a backup already
+  if (typeof Sync !== 'undefined' && Sync.on && now - Sync.syncedAt < 3 * DAY) return false;   // so is a working sync
   return now - (m.lastExport || 0) > 14 * DAY;
 }
 

@@ -717,3 +717,8 @@ textarea.tp-bells { font-family: var(--mono); font-size: 12.5px; }
 
 .yc-short { display: none; }
 @media (max-width: 640px) { .yc-name { display: none; } .yc-short { display: inline; } .yc-term { flex-direction: row; align-items: center; justify-content: space-between; } }
+
+/* ── sync ── */
+.sync-code { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.sync-code code { padding: 6px 10px; border-radius: 8px; background: var(--surface-2); font-size: 14px; letter-spacing: .04em; user-select: all; white-space: nowrap; }
+@media (max-width: 420px) { .sync-code code { font-size: 12px; padding: 6px 8px; } }

@@ -19,7 +19,7 @@ function renderOnboarding() {
         <label class="field"><span>${t('Grade / year')}</span><input class="input" name="grade" value="${onb.grade}"></label>
       </div>
       <div class="spread" style="margin-top:4px">
-        <span></span>
+        ${Sync.available ? html`<button type="button" class="linkbtn small" data-act="sync-join">${t('Already use it on another device? Sync')}</button>` : html`<span></span>`}
         <div class="seg">${[['light', 'sun'], ['dark', 'moon']].map(([k, ic]) => html`<button type="button" class="${document.documentElement.dataset.theme === k ? 'on' : ''}" data-act="onb-theme" data-v="${k}">${icon(ic, 15)}</button>`)}</div>
       </div>
       <button class="btn primary lg" style="margin-top:8px">${t('Continue')}${icon('arrow', 16)}</button>

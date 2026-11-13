@@ -153,7 +153,8 @@ function settingsData() {
   const legacy = findLegacyLocal();
   return html`
   <section class="card pad set">
-    <div class="row" style="gap:12px;align-items:flex-start;margin-bottom:6px"><span class="glyph" style="--c:var(--ok)">${icon('check', 18)}</span><div><div class="h3">${t('Everything stays on this device')}</div><div class="small muted">${t('No account, no tracking, no network requests. Your data lives in this browser ({kb} KB) and works offline.', { kb: Math.max(1, Math.round(size / 1024)) })}</div></div></div>
+    <div class="row" style="gap:12px;align-items:flex-start;margin-bottom:6px"><span class="glyph" style="--c:var(--ok)">${icon('check', 18)}</span><div><div class="h3">${Sync.on ? t('Stored on this device, synced encrypted') : t('Everything stays on this device')}</div><div class="small muted">${Sync.on ? t('No account and no tracking. Your data lives in this browser ({kb} KB) and works offline; an encrypted copy is kept online so your other devices can fetch it.', { kb: Math.max(1, Math.round(size / 1024)) }) : t('No account, no tracking, no network requests. Your data lives in this browser ({kb} KB) and works offline.', { kb: Math.max(1, Math.round(size / 1024)) })}</div></div></div>
+    ${syncRow()}
     ${fileBackupRow()}
     ${setRow(t('Export a backup'), html`${t('One JSON file with everything. Keep a copy somewhere safe, or move it to another device.')} <b>${state.meta.lastExport ? t('Last copy: {d}.', { d: fmtDate(ymd(new Date(state.meta.lastExport)), 'short') }) : FileBackup.covers() ? '' : t('You have not saved a copy yet.')}</b>`, html`<button class="btn" data-act="export">${icon('download', 15)}${t('Export')}</button>`)}
     ${setRow(t('Add to your phone’s calendar'), t('Timetable, study blocks, exams and deadlines as one .ics file — open it on your phone or import it into Google Calendar.'), html`<button class="btn" data-act="export-ics">${icon('calendar', 15)}${t('Export .ics')}</button>`)}

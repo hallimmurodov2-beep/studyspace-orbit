@@ -2,11 +2,11 @@
    Network-first: when you are online you always get the newest files (so an update can never
    leave a half-old, half-new app); when you are offline — or the network is very slow — the
    last saved copy opens instead. Your data never passes through here; it lives in localStorage. */
-const CACHE = 'studyspace-orbit-v10';
+const CACHE = 'studyspace-orbit-v11';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest',
   'css/app.css', 'css/views.css',
-  'js/util.js', 'js/i18n.js', 'js/icons.js', 'js/store.js', 'js/ui.js', 'js/filebackup.js', 'js/nlp.js', 'js/srs.js', 'js/sound.js', 'js/timer.js',
+  'js/util.js', 'js/i18n.js', 'js/icons.js', 'js/store.js', 'js/ui.js', 'js/filebackup.js', 'js/sync.js', 'js/nlp.js', 'js/srs.js', 'js/sound.js', 'js/timer.js',
   'js/views/today.js', 'js/views/tasks.js', 'js/views/calendar.js', 'js/views/diary.js', 'js/views/focus.js', 'js/views/cards.js', 'js/views/exams.js',
   'js/views/grades.js', 'js/views/subjects.js', 'js/views/notes.js', 'js/views/insights.js', 'js/views/settings.js',
   'js/demo.js', 'js/importer.js', 'js/onboarding.js', 'js/app.js',

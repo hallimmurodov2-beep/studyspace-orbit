@@ -197,6 +197,7 @@ function paletteItems(q) {
     ['moon', 'Toggle light / dark theme', () => ACT['toggle-theme']()],
     ['download', 'Export backup', () => exportBackup()],
     ['folder', 'Save to a file automatically', () => go('settings/data')],
+    ['swap', 'Sync between devices', () => go('settings/data')],
     ['sun', 'Holidays and days off', () => { go('settings/study'); setTimeout(() => { const el = $('#days-off'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 80); }],
     ['undo', 'Undo last change', () => ACT.undo()],
     ['keyboard', 'Keyboard shortcuts', () => openShortcuts()],
@@ -301,6 +302,7 @@ function boot() {
   Timer.recover();
   render();
   FileBackup.init();
+  Sync.init();
   /* coming back to the app: the linked backup file may have been changed on another computer meanwhile */
   document.addEventListener('visibilitychange', () => { if (!document.hidden && FileBackup.status === 'on') FileBackup.checkNewer(); });
   setInterval(() => {
