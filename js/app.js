@@ -330,7 +330,8 @@ function boot() {
   /* shared to Studyspace from another app (Android share sheet → manifest share_target): straight into the chat reader */
   const sp = new URLSearchParams(location.search), shared = [sp.get('share-title'), sp.get('share-text'), sp.get('share-url')].filter(Boolean).join('\n');
   if (shared) {
-    history.replaceState(null, '', location.pathname + location.hash);
+    ['share-title', 'share-text', 'share-url'].forEach(k => sp.delete(k));                 // only the shared text leaves the address
+    history.replaceState(null, '', location.pathname + (sp.toString() ? '?' + sp.toString().replace(/=(?=&|$)/g, '') : '') + location.hash);
     if (state.profile.onboarded) setTimeout(() => openChatPaste(shared), 60);
   }
   setInterval(checkReminder, 30000); setTimeout(checkReminder, 3000);
