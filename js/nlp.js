@@ -31,7 +31,7 @@ function parseQuick(input) {
   const out = { title: '', due: '', est: 0, priority: 0, subjectId: '', repeat: 'none' };
   const take = (re, fn) => { s = s.replace(re, (...m) => (fn(...m) === false ? m[0] : ' ')); };
   const today = todayStr();
-  const PRE = '(?:(?:by|due|on|until)\\s)?';
+  const PRE = '(?:(?:by|due|on|until|for)\\s)?';
 
   take(/\s(!{1,3})(?=\s)/, (m, p) => { out.priority = p.length; });
   take(/\sp([1-3])(?=\s)/i, (m, p) => { out.priority = 4 - +p; });
@@ -139,4 +139,61 @@ function periodTime(bells, i) {
   const last = bells[bells.length - 1] || ['07:15', '08:00'];
   const s = toMin(last[1]) + 10 + (i - bells.length) * 55;
   return [fromMin(Math.min(1380, s)), fromMin(Math.min(1439, s + 45))];
+}
+
+/* ───────────── homework as classmates post it in a chat ─────────────
+   "Homework for Thursday:"            → a heading: the lines under it are due that day
+   "Algebra: p. 54 ex. 3–7"             → subject + homework (also "Algebra - …", "Algebra — …", "2) Algebra …")
+   "Physics" + lines under it          → every line under a bare subject name belongs to it
+   "English: words, unit 4 for Friday" → a date in the line wins
+   Without a date, homework is due at that subject's next lesson. */
+const CHAT_SEP = /^(.{2,40}?)\s*(?:[:–—|]|\s-\s|-(?=\s))\s*(.*)$/u;
+function chatSubjectAt(line, subjects = state.subjects) {
+  const m = line.match(CHAT_SEP);
+  if (m) { const sub = findSubjectByName(m[1], subjects); if (sub) return { sub, rest: m[2].trim() }; }
+  /* no separator: "Physics learn §12" — only a name of 3+ letters counts, so "It is due…" never reads as IT */
+  const words = line.split(/\s+/);
+  for (let n = Math.min(3, words.length); n >= 1; n--) {
+    const head = words.slice(0, n).join(' ').replace(/[,.;:!?]+$/, '');
+    if (normName(head).length < 3) continue;
+    const sub = findSubjectByName(head, subjects);
+    if (sub) return { sub, rest: words.slice(n).join(' ').trim() };
+  }
+  return null;
+}
+function parseHomeworkText(text, subjects = state.subjects) {
+  const today = todayStr(), items = [];
+  let headDue = '', carry = null;
+  for (const raw of String(text || '').split(/\r?\n/)) {
+    /* bullets, numbering, quote marks and chat timestamps go */
+    let line = raw.replace(/^\s*\[?\d{1,2}[:.]\d{2}(?:\s?[ap]m)?\]?\s*(?:[-–—]\s*)?/i, '').replace(/^[\s>*•·▪◦‣✓✔☐-]+/u, '').replace(/^\(?\d{1,2}[.)]\s+/, '').trim();
+    if (!line) { carry = null; continue; }
+    const hit = chatSubjectAt(line, subjects);
+    if (!hit) {
+      /* a heading: "Homework for tomorrow:", "HW (Thursday)", "Tasks for 19.11:" */
+      if (/:\s*$/.test(line) || /^(?:home\s?work|hw|tasks?|for)\b/i.test(line)) {
+        const p = parseQuick(line.replace(/[:()]/g, ' '));
+        const rest = normName(p.title).replace(/\b(home ?work|hw|tasks?|for|the|is|are|due)\b/g, '').trim();
+        if (p.due || !rest) { headDue = p.due || headDue; carry = null; continue; }
+      }
+    }
+    if (hit && !hit.rest) { carry = hit.sub; continue; }                       // a bare subject name: the next lines are its homework
+    const sub = hit ? hit.sub : carry;
+    const p = parseQuick(hit ? hit.rest : line);
+    if (!p.title) continue;
+    const subjectId = sub ? sub.id : p.subjectId;
+    const due = p.due || headDue || (subjectId && nextLessonDate(subjectId, today)) || nextSchoolDay(today) || addDays(today, 1);
+    items.push({ subjectId, title: p.title, due, est: p.est, priority: p.priority, line: raw.trim() });
+  }
+  return items;
+}
+/* one day's homework as text for the class chat, in the same shape parseHomeworkText reads */
+function homeworkText(date) {
+  const list = state.tasks.filter(x => x.due === date);
+  if (!list.length) return '';
+  const order = lessonsOn(date).map(l => l.subjectId);
+  const rank = x => { const i = order.indexOf(x.subjectId); return i < 0 ? 99 : i; };
+  const lines = list.slice().sort((a, b) => rank(a) - rank(b) || a.createdAt - b.createdAt)
+    .map(x => (subjName(x.subjectId) ? `${subjName(x.subjectId)}: ${x.title}` : x.title));
+  return `${t('Homework for {d}', { d: fmtDate(date, 'long') })}:\n${lines.join('\n')}`;
 }

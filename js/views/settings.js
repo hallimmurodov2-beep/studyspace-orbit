@@ -39,6 +39,8 @@ function settingsStudy() {
   </section>
   <section class="card pad set">
     <div class="eyebrow">${t('Planning')}</div>
+    ${setRow(t('Evening homework reminder'), t('At this time, a notification lists the homework still open for the next school day. Works while Studyspace is open, even in a background tab.'),
+      html`<select class="select" style="width:120px" data-change="set-remind">${options([['', t('Off')], ...['17:00', '18:00', '19:00', '20:00', '21:00', '22:00'].map(x => [x, x])], state.settings.remindAt)}</select>`)}
     ${setRow(t('Daily focus goal'), t('Drives the rings, the streak and the auto-planner.'), numInput('dailyGoal', 15, 600, 15, t('min')))}
     ${setRow(t('Study window'), t('Auto-plan only uses this part of the day.'), html`<div class="row" style="gap:6px"><input type="time" class="input" style="width:112px" value="${s.windowStart}" data-change="set-time" data-k="windowStart"><span class="faint">–</span><input type="time" class="input" style="width:112px" value="${s.windowEnd}" data-change="set-time" data-k="windowEnd"></div>`)}
     ${setRow(t('Calendar hours'), t('The part of the day shown in the week view.'), html`<div class="row" style="gap:6px"><select class="select" style="width:96px" data-change="set-num" data-k="dayStart">${options(Array.from({ length: 13 }, (_, i) => [i, pad(i) + ':00']), s.dayStart)}</select><span class="faint">–</span><select class="select" style="width:96px" data-change="set-num" data-k="dayEnd">${options(Array.from({ length: 9 }, (_, i) => [16 + i, pad(16 + i) + ':00']), s.dayEnd)}</select></div>`)}
@@ -189,6 +191,11 @@ VIEWS.settings = {
 const setSetting = (k, v) => { commit(s => { s.settings[k] = v; if (k === 'focusMin') s.timer.total = s.timer.status === 'idle' ? 0 : s.timer.total; }, { noUndo: true }); applySettings(); requestRender(); };
 ACT['set-val'] = el => { let v = el.dataset.v; if (el.dataset.k === 'gradeScale') v = +v; setSetting(el.dataset.k, v); };
 ON.change['set-num'] = el => { const v = clamp(Math.round(+el.value || 0), +el.min || 0, +el.max || 9999); setSetting(el.dataset.k, v); };
+ON.change['set-remind'] = el => {
+  const v = isTime(el.value) ? el.value : '';
+  setSetting('remindAt', v);
+  if (v && 'Notification' in window && Notification.permission === 'default') Notification.requestPermission().then(p => { if (p !== 'granted') toast(t('Notifications are blocked — the reminder will show inside the app instead.')); });
+};
 ON.change['set-time'] = el => { if (isTime(el.value)) setSetting(el.dataset.k, el.value); };
 ON.change['set-bool'] = el => {
   setSetting(el.dataset.k, el.checked);

@@ -136,6 +136,7 @@ ACT['quick-add'] = () => openQuickAdd();
 function newItems() {
   return [
     { icon: 'tasks', label: t('Task'), fn: () => openQuickAdd() },
+    { icon: 'chat', label: t('Homework from a chat'), fn: () => openChatPaste() },
     { icon: 'calendar', label: t('Study block'), fn: () => openEventModal() },
     { icon: 'exam', label: t('Exam'), fn: () => openExamModal() },
     { icon: 'star', label: t('Grade'), fn: () => openGradeModal() },
@@ -190,6 +191,8 @@ function paletteItems(q) {
     ['exam', 'New exam', () => openExamModal()],
     ['star', 'Add a grade', () => openGradeModal()],
     ['list', 'Paste timetable', () => { go('settings/timetable'); openTimetablePaste(); }],
+    ['chat', 'Paste homework from a chat', () => openChatPaste()],
+    ['chat', 'Share tomorrow’s homework', () => shareHomework(nextSchoolDay() || addDays(todayStr(), 1))],
     ['layers', 'Enter report card marks', () => { go('grades'); openTermMarks(); }],
     ['cards', 'New flashcard', () => openCardModal()],
     ['note', 'New note', () => newNote()],
@@ -285,6 +288,25 @@ document.addEventListener('keydown', e => {
   if (e.key === '0') go('insights');
 });
 
+/* ── the evening reminder: what is still open for the next school day, once a day at the chosen time ── */
+function reminderDue(now = new Date()) {
+  const at = state.settings.remindAt, today = ymd(now);
+  if (!at || !isTime(at) || state.meta.lastRemind === today) return null;
+  if (now.getHours() * 60 + now.getMinutes() < toMin(at)) return null;
+  const day = nextSchoolDay(today); if (!day) return null;
+  return { day, open: sortTasks(state.tasks.filter(x => x.due === day && isOpen(x))) };
+}
+function checkReminder() {
+  const r = reminderDue(); if (!r) return;
+  commit(s => { s.meta.lastRemind = todayStr(); }, { noUndo: true });
+  if (!r.open.length) return;                                                   // all done: no need to say anything
+  const title = t('{n} for {d}', { n: nt(r.open.length, 'homework left', 'homework left'), d: relDay(r.day).toLowerCase() });
+  const body = r.open.slice(0, 4).map(x => (subjName(x.subjectId) ? subjName(x.subjectId) + ': ' : '') + x.title).join('\n');
+  if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+    try { const n = new Notification(title, { body, icon: 'icons/icon-192.png', tag: 'studyspace-evening' }); n.onclick = () => { window.focus(); go('today'); n.close(); }; } catch (e) { /* not allowed here */ }
+  } else toast(title, { action: t('Show'), onAction: () => go('today'), ms: 9000 });
+}
+
 /* ── boot ── */
 function boot() {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';   // each screen opens at its own start (the Diary jumps to today)
@@ -305,6 +327,13 @@ function boot() {
   Sync.init();
   /* coming back to the app: the linked backup file may have been changed on another computer meanwhile */
   document.addEventListener('visibilitychange', () => { if (!document.hidden && FileBackup.status === 'on') FileBackup.checkNewer(); });
+  /* shared to Studyspace from another app (Android share sheet → manifest share_target): straight into the chat reader */
+  const sp = new URLSearchParams(location.search), shared = [sp.get('share-title'), sp.get('share-text'), sp.get('share-url')].filter(Boolean).join('\n');
+  if (shared) {
+    history.replaceState(null, '', location.pathname + location.hash);
+    if (state.profile.onboarded) setTimeout(() => openChatPaste(shared), 60);
+  }
+  setInterval(checkReminder, 30000); setTimeout(checkReminder, 3000);
   setInterval(() => {
     if (document.hidden) return;
     const day = todayStr();

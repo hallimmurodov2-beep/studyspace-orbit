@@ -5,7 +5,7 @@
 const SANDBOX = /[?&]sandbox\b/.test(location.search);
 const STORE_KEY = SANDBOX ? 'studyspace.orbit.sandbox' : 'studyspace.orbit.v1';
 const BACKUP_KEY = SANDBOX ? 'studyspace.orbit.sandbox.backups' : 'studyspace.orbit.backups';
-const APP_VERSION = '2.1';
+const APP_VERSION = '2.2';
 
 const PALETTE = ['#7b6cff', '#3d8bff', '#16b8c9', '#2fbf71', '#9ccc3c', '#f2b92f', '#ff8a3d', '#ff5d5d', '#ff5c9a', '#c264ff', '#8a94ab', '#b08968'];
 const ACCENTS = { violet: '#7b6cff', blue: '#3d8bff', teal: '#14b8a6', green: '#2fbf71', orange: '#ff8a3d', pink: '#ff5c9a' };
@@ -19,6 +19,7 @@ function freshState() {
       focusMin: 25, shortMin: 5, longMin: 15, longEvery: 4, autoBreak: true,
       dailyGoal: 90, windowStart: '15:00', windowEnd: '21:00',
       dayStart: 7, dayEnd: 23,
+      remindAt: '',                     // evening homework reminder, 'HH:MM' or off
       gradeScale: 10, newPerDay: 15, sound: true, ambience: 'off', volume: 0.5, notify: false,
     },
     subjects: [], tasks: [], projects: [], lessons: [], events: [], exams: [],
@@ -27,7 +28,7 @@ function freshState() {
     goals: {},                           // the mark aimed for: { subjectId: { termId: mark } }
     daysOff: [],                         // holidays and breaks: [{ id, name, start, end }] (dates inclusive)
     changes: {},                         // one-day timetable changes: { 'YYYY-MM-DD': { lessonId: '' = cancelled | subjectId = replaced by } }
-    meta: { lastExport: 0, backupSnooze: 0 },   // bookkeeping that undo never rolls back
+    meta: { lastExport: 0, backupSnooze: 0, lastRemind: '' },   // bookkeeping that undo never rolls back
     reviewLog: {}, newLog: {},
     timer: { mode: 'focus', status: 'idle', flow: false, total: 0, acc: 0, segStart: 0, taskId: '', subjectId: '', cycle: 0, startedAt: 0 },
   };

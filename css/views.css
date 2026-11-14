@@ -722,3 +722,19 @@ textarea.tp-bells { font-family: var(--mono); font-size: 12.5px; }
 .sync-code { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
 .sync-code code { padding: 6px 10px; border-radius: 8px; background: var(--surface-2); font-size: 14px; letter-spacing: .04em; user-select: all; white-space: nowrap; }
 @media (max-width: 420px) { .sync-code code { font-size: 12px; padding: 6px 8px; } }
+
+/* ── homework from a chat (2.2) ── */
+.cp-text { font-family: var(--font); line-height: 1.5; }
+.cp-preview { display: flex; flex-direction: column; gap: 6px; }
+.cp-row { display: grid; grid-template-columns: auto minmax(110px, 160px) minmax(0, 1fr) 150px 74px; gap: 8px; align-items: center; padding: 6px 8px 6px 10px; border-radius: 12px; background: var(--surface-2); box-shadow: inset 3px 0 0 var(--c); }
+.cp-row.off { opacity: .45; }
+.cp-row .input, .cp-row .select { height: 36px; }
+.cp-dup, .cp-when { white-space: nowrap; text-align: right; }
+.ready-more { gap: 14px; align-items: center; }
+.ready-time { color: var(--text-2); font-weight: 600; }
+@media (max-width: 760px) {
+  .cp-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .cp-row .select { grid-column: 2 / 4; }
+  .cp-row [data-f=title] { grid-column: 1 / -1; }
+  .cp-row [data-f=due] { grid-column: 1 / 3; }
+}

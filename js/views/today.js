@@ -126,12 +126,13 @@ function readyCard() {
   const rows = subs.map(sid => ({ sid, hw: sortTasks(state.tasks.filter(x => x.subjectId === sid && x.due === day)) }));
   const other = sortTasks(state.tasks.filter(x => x.due === day && !subs.includes(x.subjectId)));
   const all = [...rows.flatMap(r => r.hw), ...other], left = all.filter(isOpen).length;
+  const mins = sum(all.filter(isOpen), x => x.est);                         // tonight's workload, from the estimates written down
   const exams = state.exams.filter(e => e.date === day);
   const adding = sid => ui.diary.add === day + '|' + sid;
   const status = !all.length ? html`<span class="tiny faint">${t('nothing written down')}</span>`
     : left ? html`<span class="chip warn num">${t('{n} left', { n: left })}</span>` : html`<span class="chip ok">${icon('check', 12)}${t('All set')}</span>`;
   return html`<section class="card pad ready" data-key="ready-${day}">
-    <div class="card-head"><div style="min-width:0"><h2 class="h2">${t('Next school day')}</h2><div class="small muted">${relDay(day)} · ${fmtDate(day, 'short')} · ${nt(lessonsOn(day).length, 'class', 'classes')}</div></div>${status}</div>
+    <div class="card-head"><div style="min-width:0"><h2 class="h2">${t('Next school day')}</h2><div class="small muted">${relDay(day)} · ${fmtDate(day, 'short')} · ${nt(lessonsOn(day).length, 'class', 'classes')}${mins ? html` · <b class="ready-time">${t('about {n} of homework', { n: fmtDur(mins) })}</b>` : ''}</div></div>${status}</div>
     ${exams.map(e => html`<a class="ready-exam" href="#/exams" style="--c:${subjColor(e.subjectId)}">${icon('exam', 15)}<span class="trunc">${e.title}</span></a>`)}
     <div class="ready-list">${rows.map(({ sid, hw }) => html`<div class="ready-row" style="--c:${subjColor(sid)}" data-key="rr-${sid}">
       <span class="ready-subj"><i></i><span class="trunc">${subjName(sid) || t('Class')}</span></span>
@@ -139,7 +140,8 @@ function readyCard() {
         : html`<button class="dy-add ${hw.length ? '' : 'wide'}" data-act="diary-add" data-subject="${sid}" data-date="${day}" aria-label="${t('Add homework')}">${icon('plus', 13)}${hw.length ? '' : html`<span class="tiny">${t('no homework')}</span>`}</button>`}</div>
     </div>`)}
     ${other.length ? html`<div class="ready-row"><span class="ready-subj muted">${icon('inbox', 13)}<span class="trunc">${t('Also due')}</span></span><div class="dy-hw">${other.map(diaryTask)}</div></div>` : ''}</div>
-    <a class="small muted ready-more" href="#/diary">${t('Open the diary')}${icon('right', 13, 'inl')}</a>
+    <div class="ready-more row wrap"><a class="small muted" href="#/diary">${t('Open the diary')}${icon('right', 13, 'inl')}</a><span class="grow"></span>
+      <button class="linkbtn small" data-act="chat-paste">${icon('chat', 13, 'inl')} ${t('Paste from chat')}</button>${all.length ? html`<button class="linkbtn small" data-act="share-day" data-date="${day}">${t('Share')}</button>` : ''}</div>
   </section>`;
 }
 

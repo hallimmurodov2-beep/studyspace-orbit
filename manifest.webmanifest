@@ -14,7 +14,14 @@
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
+  "share_target": {
+    "action": "./index.html",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": { "title": "share-title", "text": "share-text", "url": "share-url" }
+  },
   "shortcuts": [
+    { "name": "Diary", "url": "./index.html#/diary" },
     { "name": "Focus", "url": "./index.html#/focus" },
     { "name": "Tasks", "url": "./index.html#/tasks" },
     { "name": "Flashcards", "url": "./index.html#/cards" }
