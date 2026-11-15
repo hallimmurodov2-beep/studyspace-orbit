@@ -80,9 +80,95 @@ function importLegacy(L) {
   return true;
 }
 
+/* ───────────── packs from other Studyspace apps (Studyspace SAT) ─────────────
+   A pack is not a backup: it is merged into the workspace. Every record in it carries a fixed id with the app's
+   prefix ("sat-…"), so a second pack updates the same records instead of adding copies. What the student changed
+   here is respected: a ticked-off task stays done, a renamed or recoloured subject keeps its name and colour,
+   topics added by hand stay, and flashcards keep their review progress. One undo takes the whole merge back. */
+const PACK_INBOX = 'studyspace.orbit.inbox';
+const isPack = o => !!o && typeof o === 'object' && o.kind === 'orbit-pack' && Array.isArray(o.tasks);
+
+function mergePack(pack) {
+  if (!isPack(pack)) return null;
+  const pre = /^[a-z][a-z0-9]{1,15}-$/.test(pack.prefix || '') ? pack.prefix : 'sat-';
+  const str = (v, max = 2000) => (typeof v === 'string' ? v.slice(0, max) : '');
+  const own = x => x && typeof x === 'object' && typeof x.id === 'string' && x.id.startsWith(pre) && x.id.length <= 120;
+  const list = k => (Array.isArray(pack[k]) ? pack[k].filter(own) : []);
+  const color = v => (/^#[0-9a-f]{6}$/i.test(v) ? v : '');
+  const n = { added: 0, updated: 0, removed: 0, tasks: 0, examDate: '' };
+  commit(s => {
+    const upsert = (arr, item, keep) => {
+      const i = arr.findIndex(x => x.id === item.id);
+      if (i < 0) { arr.push(item); n.added++; } else { arr[i] = keep ? keep(arr[i], item) : { ...arr[i], ...item }; n.updated++; }
+    };
+    for (const x of list('subjects')) upsert(s.subjects, { id: x.id, name: str(x.name, 60) || 'Subject', color: color(x.color) || PALETTE[s.subjects.length % PALETTE.length], icon: str(x.icon, 30) || guessSubjectIcon(str(x.name)), teacher: str(x.teacher, 80), room: str(x.room, 40) },
+      (old, nw) => ({ ...nw, name: old.name, color: old.color, icon: old.icon, teacher: old.teacher, room: old.room }));
+    const subj = id => (s.subjects.some(x => x.id === id) ? id : '');
+    for (const x of list('exams')) {
+      if (!isYmd(x.date)) continue;
+      const topics = (Array.isArray(x.topics) ? x.topics : []).filter(own).map(tp => ({ id: tp.id, title: str(tp.title, 200), conf: clamp(Math.round(+tp.conf || 0), 0, 3) }));
+      upsert(s.exams, { id: x.id, title: str(x.title, 150) || 'Exam', subjectId: subj(x.subjectId), date: x.date, time: isTime(x.time) ? x.time : '', room: str(x.room, 40), notes: str(x.notes), topics },
+        (old, nw) => ({ ...old, title: old.title || nw.title, subjectId: nw.subjectId || old.subjectId, date: nw.date, time: old.time || nw.time, notes: nw.notes,
+          topics: [...nw.topics, ...(old.topics || []).filter(tp => !String(tp.id).startsWith(pre))] }));
+      n.examDate = x.date;
+    }
+    const exam = id => (s.exams.some(x => x.id === id) ? id : '');
+    const keep = new Set();
+    for (const x of list('tasks')) {
+      if (x.due && !isYmd(x.due)) continue;
+      const done = x.status === 'done';
+      const task = newTask({ id: x.id, title: str(x.title, 200) || 'Task', subjectId: subj(x.subjectId), examId: exam(x.examId), due: isYmd(x.due) ? x.due : '', planned: isYmd(x.planned) ? x.planned : '',
+        priority: clamp(Math.round(+x.priority || 0), 0, 3), est: clamp(Math.round(+x.est || 0), 0, 600), status: done ? 'done' : 'todo', notes: str(x.notes), doneAt: done ? Date.now() : 0 });
+      keep.add(task.id); n.tasks++;
+      upsert(s.tasks, task, (old, nw) => {
+        const isDone = old.status === 'done' || nw.status === 'done';
+        return { ...old, title: nw.title, subjectId: nw.subjectId, examId: nw.examId, due: nw.due, planned: nw.planned, priority: nw.priority, est: nw.est, notes: nw.notes,
+          status: isDone ? 'done' : old.status, doneAt: isDone ? (old.doneAt || Date.now()) : 0 };
+      });
+    }
+    /* planned days that the other app no longer plans (and that were not done) disappear */
+    const rep = pack.replace && typeof pack.replace === 'object' ? pack.replace : null;
+    if (rep && typeof rep.prefix === 'string' && rep.prefix.startsWith(pre) && isYmd(rep.from)) {
+      const before = s.tasks.length;
+      s.tasks = s.tasks.filter(x => !(x.id.startsWith(rep.prefix) && !keep.has(x.id) && x.status !== 'done' && x.due && x.due >= rep.from));
+      n.removed += before - s.tasks.length;
+    }
+    for (const x of list('sessions')) {
+      if (!isYmd(x.date) || !(+x.min > 0)) continue;
+      upsert(s.sessions, { id: x.id, date: x.date, at: isFinite(+x.at) && +x.at > 0 ? +x.at : pd(x.date).getTime(), min: clamp(Math.round(+x.min), 1, 720), subjectId: subj(x.subjectId), taskId: '', kind: 'focus', rating: 0 });
+    }
+    for (const x of list('decks')) upsert(s.decks, { id: x.id, name: str(x.name, 80) || 'Deck', subjectId: subj(x.subjectId) }, (old, nw) => ({ ...nw, name: old.name }));
+    const deck = id => (s.decks.some(x => x.id === id) ? id : '');
+    for (const x of list('cards')) {
+      if (!deck(x.deckId)) continue;
+      upsert(s.cards, newCard({ id: x.id, deckId: x.deckId, front: str(x.front, 1000), back: str(x.back, 3000) }), (old, nw) => ({ ...old, front: nw.front, back: nw.back }));
+    }
+  });
+  return n;
+}
+function packSummary(r) {
+  return t('SAT plan updated: {a} study days{b}', { a: r.tasks, b: r.examDate ? t(', exam on {d}', { d: fmtDate(r.examDate) }) : '' });
+}
+/* Studyspace SAT on the same address leaves its pack in localStorage; pick it up when Orbit is open */
+function checkPackInbox() {
+  if (SANDBOX || !state.profile.onboarded) return;
+  let raw = null;
+  try { raw = localStorage.getItem(PACK_INBOX); } catch (e) { return; }
+  if (!raw) return;
+  try { localStorage.removeItem(PACK_INBOX); } catch (e) { /* ignore */ }
+  let pack; try { pack = JSON.parse(raw); } catch (e) { return; }
+  const r = mergePack(pack);
+  if (r) toastUndo(packSummary(r));
+}
+
 function importAny(text) {
   let obj;
   try { obj = JSON.parse(text); } catch (e) { toast(t('That is not a valid JSON backup file.'), { kind: 'danger' }); return false; }
+  if (isPack(obj)) {
+    if (!state.profile.onboarded) { toast(t('Set up Orbit first, then import this plan from Settings.'), { kind: 'danger' }); return false; }
+    const r = mergePack(obj); if (!r) return false;
+    toastUndo(packSummary(r)); go('exams'); return true;
+  }
   if (obj && obj.app === 'studyspace-orbit' && obj.state && Array.isArray(obj.state.tasks)) {
     const next = normalizeState(obj.state); next.profile.onboarded = true;
     replaceState(next); toastUndo(t('Backup restored')); go('today'); return true;

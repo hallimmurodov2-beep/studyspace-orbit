@@ -5,7 +5,7 @@
 const SANDBOX = /[?&]sandbox\b/.test(location.search);
 const STORE_KEY = SANDBOX ? 'studyspace.orbit.sandbox' : 'studyspace.orbit.v1';
 const BACKUP_KEY = SANDBOX ? 'studyspace.orbit.sandbox.backups' : 'studyspace.orbit.backups';
-const APP_VERSION = '2.2';
+const APP_VERSION = '2.3';
 
 const PALETTE = ['#7b6cff', '#3d8bff', '#16b8c9', '#2fbf71', '#9ccc3c', '#f2b92f', '#ff8a3d', '#ff5d5d', '#ff5c9a', '#c264ff', '#8a94ab', '#b08968'];
 const ACCENTS = { violet: '#7b6cff', blue: '#3d8bff', teal: '#14b8a6', green: '#2fbf71', orange: '#ff8a3d', pink: '#ff5c9a' };

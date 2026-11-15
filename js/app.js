@@ -335,6 +335,10 @@ function boot() {
     if (state.profile.onboarded) setTimeout(() => openChatPaste(shared), 60);
   }
   setInterval(checkReminder, 30000); setTimeout(checkReminder, 3000);
+  /* a plan sent from Studyspace SAT on this same address */
+  setTimeout(checkPackInbox, 400);
+  addEventListener('focus', checkPackInbox);
+  addEventListener('storage', e => { if (e.key === PACK_INBOX && e.newValue) checkPackInbox(); });
   setInterval(() => {
     if (document.hidden) return;
     const day = todayStr();

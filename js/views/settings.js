@@ -160,7 +160,7 @@ function settingsData() {
     ${fileBackupRow()}
     ${setRow(t('Export a backup'), html`${t('One JSON file with everything. Keep a copy somewhere safe, or move it to another device.')} <b>${state.meta.lastExport ? t('Last copy: {d}.', { d: fmtDate(ymd(new Date(state.meta.lastExport)), 'short') }) : FileBackup.covers() ? '' : t('You have not saved a copy yet.')}</b>`, html`<button class="btn" data-act="export">${icon('download', 15)}${t('Export')}</button>`)}
     ${setRow(t('Add to your phone’s calendar'), t('Timetable, study blocks, exams and deadlines as one .ics file — open it on your phone or import it into Google Calendar.'), html`<button class="btn" data-act="export-ics">${icon('calendar', 15)}${t('Export .ics')}</button>`)}
-    ${setRow(t('Import'), t('Restore a Studyspace Orbit backup — or bring over a backup from the older Studyspace (v1–v8).'), html`<button class="btn" data-act="import">${icon('upload', 15)}${t('Import file')}</button>`)}
+    ${setRow(t('Import'), t('Restore a Studyspace Orbit backup, bring over a backup from the older Studyspace (v1–v8), or add a study plan saved by Studyspace SAT.'), html`<button class="btn" data-act="import">${icon('upload', 15)}${t('Import file')}</button>`)}
     ${legacy ? setRow(t('Older Studyspace found in this browser'), t('{a} tasks and {b} subjects from Studyspace {v} are stored here. Bring them over in one click — the old data is not modified.', { a: (legacy.tasks || []).length, b: (legacy.subjects || []).length, v: legacy.version || '' }), html`<button class="btn primary" data-act="import-legacy">${icon('sparkles', 15)}${t('Bring it over')}</button>`) : ''}
   </section>
   <section class="card pad set">

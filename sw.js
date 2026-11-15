@@ -2,7 +2,7 @@
    Network-first: when you are online you always get the newest files (so an update can never
    leave a half-old, half-new app); when you are offline — or the network is very slow — the
    last saved copy opens instead. Your data never passes through here; it lives in localStorage. */
-const CACHE = 'studyspace-orbit-v13';
+const CACHE = 'studyspace-orbit-v14';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest',
   'css/app.css', 'css/views.css',
