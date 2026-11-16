@@ -95,7 +95,9 @@ function mergePack(pack) {
   const own = x => x && typeof x === 'object' && typeof x.id === 'string' && x.id.startsWith(pre) && x.id.length <= 120;
   const list = k => (Array.isArray(pack[k]) ? pack[k].filter(own) : []);
   const color = v => (/^#[0-9a-f]{6}$/i.test(v) ? v : '');
-  const n = { added: 0, updated: 0, removed: 0, tasks: 0, examDate: '' };
+  /* shown in the "… plan updated" message: "SAT" for studyspace-sat, "IELTS" for studyspace-ielts */
+  const label = /^studyspace-[a-z0-9]{2,12}$/.test(pack.app || '') ? pack.app.slice(11).toUpperCase() : 'Study';
+  const n = { added: 0, updated: 0, removed: 0, tasks: 0, examDate: '', label };
   commit(s => {
     const upsert = (arr, item, keep) => {
       const i = arr.findIndex(x => x.id === item.id);
@@ -147,7 +149,7 @@ function mergePack(pack) {
   return n;
 }
 function packSummary(r) {
-  return t('SAT plan updated: {a} study days{b}', { a: r.tasks, b: r.examDate ? t(', exam on {d}', { d: fmtDate(r.examDate) }) : '' });
+  return t('{l} plan updated: {a} study days{b}', { l: r.label, a: r.tasks, b: r.examDate ? t(', exam on {d}', { d: fmtDate(r.examDate) }) : '' });
 }
 /* Studyspace SAT on the same address leaves its pack in localStorage; pick it up when Orbit is open */
 function checkPackInbox() {
